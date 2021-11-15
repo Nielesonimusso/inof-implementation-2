@@ -1,0 +1,156 @@
+version: "3"
+
+services:
+  sweet-sourness-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: sweet-sourness-model-access-gateway
+    hostname: sweet-sourness-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - TASTES_TO_CALCULATE=sweetness,sourness
+      - 'APPLICATION_BASE=http://sweet-sourness-model-access-gateway:5001'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - MODEL=taste
+      - API_TOKEN=inof1234michiel
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db-container
+      - ingredient-service
+    networks:
+      - inof_vnetwork
+
+  tomato-saltiness-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: tomato-saltiness-model-access-gateway
+    hostname: tomato-saltiness-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - TASTES_TO_CALCULATE=saltiness,tomato taste
+      - 'APPLICATION_BASE=http://tomato-saltiness-model-access-gateway:5001'
+      - MODEL=taste
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234michiel
+    ports:
+      - "5003:5001"
+    depends_on:
+      - db-container
+      - ingredient-service
+    networks:
+      - inof_vnetwork
+
+  nutrition-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: nutrition-model-access-gateway
+    hostname: nutrition-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - 'APPLICATION_BASE=http://nutrition-model-access-gateway:5001'
+      - MODEL=nutrition
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234jakob
+    ports:
+      - "5004:5001"
+    depends_on:
+      - db-container
+      - ingredient-service
+    networks:
+      - inof_vnetwork
+
+  ingredient-service:
+    build:
+      dockerfile: ingredient_service.Dockerfile
+      context: ./model-sharing-platform/
+    container_name: ingredient-service
+    hostname: ingredient-service
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5002
+      - FLASK_RUN_HOST=0.0.0.0
+    ports:
+      - "5002:5002"
+    depends_on:
+      - db-container
+    networks:
+      - inof_vnetwork
+
+  ingredient-access-gateway:
+    build:
+      dockerfile: datasource_access_gateway.Dockerfile
+      context: ./model-sharing-platform/
+    container_name: ingredient-access-gateway
+    hostname: ingredient-access-gateway
+    environment:
+      - 'INOF_RUN_CONFIG=deploy'
+      - 'DATA_SOURCE_FILE_PATHS=data/IngredientDatabase.csv,data/IngredientPropertyDatabase.csv'
+      - 'COLUMN_TYPES=[
+        {
+          "Ingredient": {"data_type":"str"}, 
+          "IngredientCode": {"data_type":"str"}
+        },{
+          "Ingredient": {"data_type":"str"}, 
+          "IngredientCode": {"data_type":"str"}, 
+          "IngredientProperty": {"data_type":"str"}, 
+          "ValueText": {"data_type":"str"}, 
+          "ValueNum": {"data_type":"float", "unit":"UnitOfMeasure"}, 
+          "UnitOfMeasure": {"data_type":"str"}
+        }]'
+      - 'ONTOLOGY_FILE_PATH=data/test-ontology.ttl'
+      - 'APPLICATION_BASE=http://ingredient-access-gateway:5020'
+      - 'ACCESS_PRICE=7'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234michiel
+      - FLASK_RUN_PORT=5020
+      - FLASK_RUN_HOST=0.0.0.0
+    ports:
+      - "5019:5020"
+    depends_on:
+      - model-sharing-backend
+    networks:
+      - inof_vnetwork
+
+  recipe-access-gateway:
+    build:
+      dockerfile: datasource_access_gateway.Dockerfile
+      context: ./model-sharing-platform/
+    container_name: recipe-access-gateway
+    hostname: recipe-access-gateway
+    environment:
+      - 'INOF_RUN_CONFIG=deploy'
+      - 'DATA_SOURCE_FILE_PATHS=data/LOWmatoRecipe.csv'
+      - 'COLUMN_TYPES=[
+        {
+          "Ingredient": {"data_type":"str"},
+          "Amount": {"data_type":"float", "unit":"Unit"},
+          "Unit": {"data_type":"str"}
+        }
+        ]'
+      - 'ONTOLOGY_FILE_PATH=data/test-ontology.ttl'
+      - 'APPLICATION_BASE=http://recipe-access-gateway:5020'
+      - 'ACCESS_PRICE=7'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234niels
+      - FLASK_RUN_PORT=5020
+      - FLASK_RUN_HOST=0.0.0.0
+    ports:
+      - "5020:5020"
+    depends_on:
+      - model-sharing-backend
+    networks:
+      - inof_vnetwork
+
+networks:
+  inof_vnetwork:
+    driver: bridge

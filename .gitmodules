@@ -1,0 +1,6 @@
+[submodule "inof-frontend"]
+	path = inof-frontend
+	url = https://github.com/Nielesonimusso/inof-frontend.git
+[submodule "model-sharing-platform"]
+	path = model-sharing-platform
+	url = https://github.com/Nielesonimusso/model-sharing-platform.git

@@ -1,0 +1,73 @@
+version: "3"
+
+services:
+  db-container:
+    image: postgres
+    container_name: db-container
+    hostname: db-container
+    environment:
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_USER: "admin"
+      POSTGRES_MULTIPLE_DATABASES: "ingredient_db,ingredient_db_test,model_db,model_db_test,gateway_db,gateway_db_test"
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./model-sharing-platform/db_files/data_volumes/postgresql:/var/lib/postgresql/data
+      - ./model-sharing-platform/db_files/postgres_init_files:/docker-entrypoint-initdb.d
+    networks:
+      - inof_vnetwork
+
+  pgadmin-container:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "n.rood@tue.nl"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - "8080:80"
+    depends_on:
+      - db-container
+    networks:
+      - inof_vnetwork
+
+  graphdb-container:
+    image: ontotext/graphdb:9.1.1-free
+    container_name: graphdb-container
+    hostname: graphdb-container
+    ports:
+      - "7200:7200"
+    volumes:
+      - ./model-sharing-platform/db_files/data_volumes/graphdb:/opt/graphdb/home
+    networks:
+      - inof_vnetwork
+
+  model-sharing-backend:
+    build:
+      dockerfile: model_sharing_backend.Dockerfile
+      context: ./model-sharing-platform/
+    container_name: model-sharing-backend
+    hostname: model-sharing-backend
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5000
+      - FLASK_RUN_HOST=0.0.0.0
+    ports:
+      - "5000:5000"
+    networks:
+      - inof_vnetwork
+
+  inof-frontend:
+    build:
+      dockerfile: Dockerfile
+      context: ./inof-frontend/
+    container_name: inof-frontend
+    hostname: inof-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - model-sharing-backend
+    networks:
+      - inof_vnetwork
+
+networks:
+  inof_vnetwork:
+    driver: bridge

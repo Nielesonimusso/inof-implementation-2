@@ -1,0 +1,93 @@
+version: "3"
+
+services:
+  pasteurization-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: pasteurization-model-access-gateway
+    hostname: pasteurization-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - 'APPLICATION_BASE=http://pasteurization-model-access-gateway:5001'
+      - MODEL=pasteurization      
+      - 'MODEL_DEPENDENCY_GATEWAY_URLS={
+         "microbe":"http://microbe-hex-access-gateway:5020/api/Microbes/ontology.ttl#",
+         "hex":"http://microbe-hex-access-gateway:5020/api/HeatExchangers/ontology.ttl#"
+        }'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234kevin
+    ports:
+      - "5005:5001"
+    networks:
+      - inof_vnetwork
+
+  shelflife-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: shelflife-model-access-gateway
+    hostname: shelflife-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - 'APPLICATION_BASE=http://shelflife-model-access-gateway:5001'
+      - MODEL=shelflife
+      - 'MODEL_DEPENDENCY_GATEWAY_URLS={
+         "microbe":"http://microbe-hex-access-gateway:5020/api/Microbes/ontology.ttl#"
+        }'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234kevin
+    ports:
+      - "5006:5001"
+    networks:
+      - inof_vnetwork
+
+  microbe-hex-access-gateway:
+    build:
+      dockerfile: datasource_access_gateway.Dockerfile
+      context: ./model-sharing-platform/
+    container_name: microbe-hex-access-gateway
+    hostname: microbe-hex-access-gateway
+    environment:
+      - 'INOF_RUN_CONFIG=deploy'
+      - 'DATA_SOURCE_FILE_PATHS=data/HeatExchangers.csv,data/Microbes.csv'
+      - 'COLUMN_TYPES=[
+        {
+          "Type": {"data_type":"str"}, 
+          "Volume": {"data_type":"float", "unit": "cubicMetre", "om_unit":true}, 
+          "Area": {"data_type":"float", "unit": "squareMetre", "om_unit":true}, 
+          "koverall": {"data_type":"float"} 
+        },{
+          "Organism": {"data_type":"str"}, 
+          "Tref": {"data_type":"float", "unit": "degreeCelsius", "om_unit":true}, 
+          "z": {"data_type":"float"}, 
+          "logD": {"data_type":"float"}, 
+          "mu_max": {"data_type":"float"}, 
+          "Tmin": {"data_type":"float", "unit": "degreeCelsius", "om_unit":true}, 
+          "Topt": {"data_type":"float", "unit": "degreeCelsius", "om_unit":true}, 
+          "Tmax": {"data_type":"float", "unit": "degreeCelsius", "om_unit":true}, 
+          "pHmin": {"data_type":"float", "unit": "Acidity", "om_unit":true}, 
+          "pHopt": {"data_type":"float", "unit": "Acidity", "om_unit":true}, 
+          "pHmax": {"data_type":"float", "unit": "Acidity", "om_unit":true}, 
+          "awmin": {"data_type":"float"}, 
+          "awopt": {"data_type":"float"} 
+        }]'
+      - 'ONTOLOGY_FILE_PATH=data/test-ontology.ttl'
+      - 'APPLICATION_BASE=http://microbe-hex-access-gateway:5020'
+      - 'ACCESS_PRICE=7'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234kevin
+      - FLASK_RUN_PORT=5020
+      - FLASK_RUN_HOST=0.0.0.0
+    ports:
+      - "5021:5020"
+    networks:
+      - inof_vnetwork
+
+networks:
+  inof_vnetwork:
+    driver: bridge

@@ -1,0 +1,81 @@
+version: "3"
+
+services:
+  calibration-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: calibration-model-access-gateway
+    hostname: calibration-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - 'APPLICATION_BASE=http://calibration-model-access-gateway:5001'
+      - MODEL=calibration      
+      - 'MODEL_DEPENDENCY_GATEWAY_URLS={}'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234puneet
+    ports:
+      - "5007:5001"
+    networks:
+      - inof_vnetwork
+
+  droplet-model-access-gateway:
+    build:
+      context: ./model-sharing-platform/
+      dockerfile: model_access_gateway.Dockerfile
+    container_name: droplet-model-access-gateway
+    hostname: droplet-model-access-gateway
+    environment:
+      - INOF_RUN_CONFIG=deploy
+      - FLASK_RUN_PORT=5001
+      - FLASK_RUN_HOST=0.0.0.0
+      - 'APPLICATION_BASE=http://droplet-model-access-gateway:5001'
+      - MODEL=dropletsize
+      - 'MODEL_DEPENDENCY_GATEWAY_URLS={}'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234puneet
+    ports:
+      - "5008:5001"
+    networks:
+      - inof_vnetwork
+  
+  cali-drop-data-access-gateway:
+    build:
+      dockerfile: datasource_access_gateway.Dockerfile
+      context: ./model-sharing-platform/
+    container_name: cali-drop-data-access-gateway
+    hostname: cali-drop-data-access-gateway
+    environment:
+      - 'INOF_RUN_CONFIG=deploy'
+      - 'DATA_SOURCE_FILE_PATHS=data/lowmato_NIR_measurement_data.csv,data/cream_model_parameters.csv,data/cream_geometric_mean.csv'
+      - 'COLUMN_TYPES=[
+        {
+          "i_lambda": {"data_type":"int"},
+          "lambda": {"data_type":"int", "unit": "nanometre", "om_unit":true}, 
+          "logA": {"data_type":"float", "unit": "one", "om_unit":true},
+          "run": {"data_type":"int"}
+        },{
+          "i_lambda": {"data_type":"int"},
+          "lambda": {"data_type":"int", "unit": "nanometre", "om_unit":true}, 
+          "alpha": {"data_type":"float", "unit": "one", "om_unit":true},
+          "beta": {"data_type":"float", "unit": "one", "om_unit":true},
+          "sd_beta": {"data_type":"float", "unit": "one", "om_unit":true}
+        },{
+          "geomean_dropsz": {"data_type":"float", "unit": "micrometre", "om_unit":true}
+        }]'
+      - 'APPLICATION_BASE=http://cali-drop-data-access-gateway:5020'
+      - 'ACCESS_PRICE=7'
+      - 'INOF_BASE=http://model-sharing-backend:5000'
+      - API_TOKEN=inof1234hossain
+      - FLASK_RUN_PORT=5020
+      - FLASK_RUN_HOST=0.0.0.0
+    ports:
+      - "5022:5020"
+    networks:
+      - inof_vnetwork
+
+networks:
+  inof_vnetwork:
+    driver: bridge
